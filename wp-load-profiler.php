@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP Load Profiler
 Description: Monitoring WordPress loading pages time
-Version:     0.1
+Version:     0.2
 Author:      Sergey Zaharchenko <zaharchenko.dev@gmail.com>
 */
 
@@ -30,13 +30,19 @@ class WP_Load_Profiler {
 	public function init() {
 		$late                         = 1000000;
 		$early                        = - 1000000;
-		$this->profiler['start_time'] = microtime( true ) * 1000;
-		$this->profiler['last_time']  = $this->profiler['start_time'];
+		if( defined('WPL_PROFILER_START_TIME') ){
+			$this->profiler['start_time'] = WPL_PROFILER_START_TIME;
+			$this->profiler['last_time']  = $this->profiler['start_time'];
+			$this->check( 'Plugin WP_Load_Profiler init' );
+		} else {
+			$this->profiler['start_time'] = microtime( true );
+			$this->profiler['last_time']  = $this->profiler['start_time'];
+		}
 
 		add_action( 'init', [ $this, 'before_init' ], $early );
 		add_action( 'init', [ $this, 'after_init' ], $late );
 		add_action( 'wp_loaded', [ $this, 'wp_loaded' ], $late );
-		add_action( 'template_redirect', [ $this, 'template_redirect' ], $late );
+		add_action( 'template_redirect', [ $this, 'template_redirect' ], $early );
 		add_action( 'shutdown', [ $this, 'shutdown' ], $late );
 	}
 
@@ -67,7 +73,7 @@ class WP_Load_Profiler {
 	}
 
 	public function check( $description ) {
-		$current_time = microtime( true ) * 1000;
+		$current_time = microtime( true );
 
 		$this->profiler['checks'][] = [
 			'description'          => $description,
