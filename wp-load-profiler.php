@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP Load Profiler
 Description: Monitoring WordPress loading pages time
-Version:     0.2
+Version:     0.3
 Author:      Sergey Zaharchenko <zaharchenko.dev@gmail.com>
 */
 
@@ -28,38 +28,33 @@ class WP_Load_Profiler {
 	}
 
 	public function init() {
-		$late                         = 1000000;
-		$early                        = - 1000000;
-		if( defined('WPL_PROFILER_START_TIME') ){
-			$this->profiler['start_time'] = WPL_PROFILER_START_TIME;
-			$this->profiler['last_time']  = $this->profiler['start_time'];
-			$this->check( 'Plugin WP_Load_Profiler init' );
-		} else {
-			$this->profiler['start_time'] = microtime( true );
-			$this->profiler['last_time']  = $this->profiler['start_time'];
+		global $timestart;
+
+		$late  = 1000000;
+		$early = - 1000000;
+
+		$this->profiler['last_time'] = $this->profiler['start_time'] = $timestart;
+
+		$actions = [
+			'muplugins_loaded',
+			'plugins_loaded',
+			'init',
+			'wp_loaded',
+			'template_redirect',
+			'wp_head',
+			'shutdown',
+		];
+
+		foreach ( $actions as $action ) {
+			add_action( $action, [ $this, 'before_' . $action ], $early );
+			add_action( $action, [ $this, 'after_' . $action ], $late );
 		}
 
-		add_action( 'init', [ $this, 'before_init' ], $early );
-		add_action( 'init', [ $this, 'after_init' ], $late );
-		add_action( 'wp_loaded', [ $this, 'wp_loaded' ], $late );
-		add_action( 'template_redirect', [ $this, 'template_redirect' ], $early );
 		add_action( 'shutdown', [ $this, 'shutdown' ], $late );
 	}
 
-	public function before_init() {
-		$this->check( 'Before init hook' );
-	}
-
-	public function after_init() {
-		$this->check( 'After init hook' );
-	}
-
-	public function wp_loaded() {
-		$this->check( 'WP loaded' );
-	}
-
-	public function template_redirect() {
-		$this->check( 'Before page loading' );
+	public function __call( $method, $args ) {
+		$this->check( $method );
 	}
 
 	public function shutdown() {

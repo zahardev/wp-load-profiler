@@ -15,7 +15,7 @@
 </style>
 <table id="profiler">
 	<th>Description</th>
-	<th>Time to point (s)</th>
+	<th>Time from previous point (s)</th>
 	<th>Time from start (s)</th>
 	<?php foreach( $profiler_checks as $row ):  ?>
 		<tr>
